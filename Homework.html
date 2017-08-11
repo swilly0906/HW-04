@@ -1,0 +1,341 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>week4 Homework</title>
+    <script src="https://d3js.org/d3.v3.js"></script>
+    <link rel="stylesheet" href="style.css" type="text/css">
+
+</head>
+
+<body>
+
+    <h1> The output in console. Thanks </h1>
+    <script>
+        var index = ["中國國民黨", "民主進步黨", "時代力量", "無黨團結聯聯盟", "親民黨"];
+        var color = ["red", "blue", "green", "yellow", "black"];
+
+        var xScale = d3.scale.ordinal()
+            .domain(index)
+            .range(color);
+
+        console.log(xScale("中國國民黨"));
+        console.log(xScale("民主進步黨"));
+        console.log(xScale("時代力量"));
+        console.log(xScale("無黨團結聯聯盟"));
+        console.log(xScale("親民黨"));
+
+    </script>
+    <hr>
+
+    <div id="tooltip" class="hidden">
+        <p id="city">縣市別</p>
+        <p id="cancer_type">癌症別</p>
+        <p id="cancer_num">案例數:X</p>
+    </div>
+
+    <script>
+        /*--------Step1:先宣告重要的變數---------*/
+        var W = 1000;
+        var H = 1000;
+        var padding = 80;
+
+        d3.csv("cancer_data.csv", mid, function(dataSet) {
+            bind(dataSet);
+            render(dataSet);
+            btnList(dataSet);
+
+        });
+        /*--------Step2:先宣告完前面的變數,才可宣告SVG畫布---------*/
+        svg();
+
+        function svg() {
+            d3.select("body")
+                .append("svg")
+                .attr({
+                    width: W,
+                    height: H
+                });
+
+            d3.select("svg")
+                .append("g") //What is the purpose of 40th Line??
+                .append("rect")
+                .attr({
+                    width: "100%",
+                    height: "100%",
+                    fill: "white"
+                });
+        };
+
+        function mid(d) {
+            d.癌症發生數 = +d.癌症發生數;
+
+            return d;
+
+        };
+
+        function bind(dataSet) {
+
+
+
+            var selection = d3.select("svg").selectAll("circle").data(dataSet);
+
+            //selection.enter().append("circle");     本行有誤 勿使用 供參考而已
+
+
+
+            var selection1 = selection.enter().append("g").attr("class", "xxAxis");
+            var selection2 = selection.enter().append("g").attr("class", "yyAxis");
+            selection1.append("circle");
+            selection2.append("circle");
+
+
+
+            selection.exit().remove();
+
+
+        };
+
+        function render(dataSet) {
+
+            var xScale = d3.time.scale()
+                .domain([new Date(d3.min(dataSet, function(d) {
+                    return d.癌症診斷年
+                })), new Date(d3.max(dataSet, function(d) {
+                    return d.癌症診斷年
+                }))])
+                .range([padding - 15, W - padding]);
+
+            var yScale = d3.scale.linear()
+                .domain([d3.min(dataSet, function(d) {
+                    return d.平均年齡
+                }), d3.max(dataSet, function(d) {
+                    return d.平均年齡;
+                })])
+                .range([H - padding, padding]);
+
+            var rScale = d3.scale.linear()
+                .domain([d3.min(dataSet, function(d) {
+                    return d.癌症發生數
+                }), d3.max(dataSet, function(d) {
+                    return d.癌症發生數;
+                })])
+                .range([5, 35]);
+
+            var fScale = d3.scale.category20();
+
+            var xAxis = d3.svg.axis()
+                .scale(xScale)
+                .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                .scale(yScale)
+                .orient("left")
+                .ticks(11)
+                .tickFormat(function(d) {
+                    return d;
+                });
+
+            d3.selectAll("g>circle")
+                .attr({
+                    cx: function(d) {
+                        return xScale(new Date(d.癌症診斷年));
+                    },
+                    cy: function(d) {
+                        return yScale(d.平均年齡);
+                    },
+                    r: function(d) {
+                        return rScale(d.癌症發生數);
+                    },
+                    fill: function(d) {
+                        return fScale(d.平均年齡);
+                    }
+
+                }).on("mouseover", function(d) {
+
+                    var posX = +d3.select(this).attr("cx");
+                    var posY = +d3.select(this).attr("cy");
+                    var tooltip = d3.select("#tooltip")
+                        .style({
+                            left: (posX + 20) + "px",
+                            top: (posY + 20) + "px"
+                        });
+                    tooltip.select("#city").text(d.縣市別);
+                    tooltip.select("#cancer_type").text(d.癌症別);
+                    var cancernum = [];
+                    var cancernum = d.癌症發生數;
+                    tooltip.select("#cancer_num").text(function(d) {
+                        return "案例數" + ":" + cancernum;
+
+                    });
+
+
+                    d3.select("#tooltip").classed("hidden", false);
+
+                }).on("mouseout", function(d) {
+                    d3.select("#tooltip").classed("hidden", true);
+                });
+
+            d3.select("svg>g.xxAxis").attr({
+                transform: "translate(0," + (H - padding + 15) + ")"
+            }).call(xAxis);
+            d3.select("svg>g.yyAxis").attr({
+                transform: "translate(" + (padding - 25) + ",0)"
+            }).call(yAxis);
+
+
+        };
+
+        function btnList(dataSet) {
+
+            function unique(arr) {
+                var n = [];
+                arr.forEach(function(d) {
+                    if (n.indexOf(d) === -1) {
+                        n.push(d);
+
+                    };
+
+                });
+                return n;
+            };
+
+
+            var fdataSet = dataSet.map(function(d) {
+                return d.癌症別;
+            });
+
+            var udataSet = unique(fdataSet);
+
+            var ffdataSet = udataSet.filter(function(d) {
+                return d != "";
+            });
+
+            var selection = d3.select("body")
+                .append("select")
+                .selectAll("option")
+                .data(ffdataSet);
+            selection.enter().append("option");
+            selection.exit().remove();
+
+            d3.selectAll("select>option").attr({ // 要設定選單裡面的所有attribute
+                value: function(d) {
+                    return d;
+                },
+                class: "button"
+            }).text(function(d) {
+                return d;
+            });
+
+            d3.select("select").on("change", function(d) {
+                var value = d3.select("select").property("value"); //要選select向下的value 不要選成option 項下的
+                update(value);
+
+            });
+
+            function update(cancertype) {
+                var newdataSet = dataSet.filter(function(d) {
+                    return d.癌症別 === cancertype;
+                });
+                bind(newdataSet);
+                render(newdataSet);
+
+            };
+
+        };
+
+    </script>
+    <hr>
+
+    <script>
+        svg1();
+
+        function svg1() {
+            var easeArr = ["linear", "quad", "cubic", "sin", "exp", "circle", "elastic", "back", "bounce"];
+            d3.select("body")
+                .append("svg")
+                .attr({
+                    width: 500,
+                    height: 400,
+                    id:"animation"
+                });
+
+            function bind(dataSet) {
+                var selection_circle = d3.select("#animation").selectAll("circle").data(dataSet);
+                var selection_text = d3.select("#animation").selectAll("text").data(dataSet);
+                var selection_line = d3.select("#animation").selectAll("line").data(dataSet);
+
+                // 初始化設定
+                selection_line.enter().append("line").attr({
+                    x1: 100,
+                    y1: function(d, i) {
+                        return 20 + i * 35;
+                    },
+                    x2: 300,
+                    y2: function(d, i) {
+                        return 20 + i * 35;
+                    },
+                    stroke: "lightgreen"
+                }).text(function(d) {
+                    return d;
+                });
+                selection_line.exit().remove();
+
+                selection_circle.enter().append("circle").attr({
+                    cx: 100,
+                    cy: function(d, i) {
+                        return 20 + i * 35;
+                    },
+                    r: 15,
+                    fill: "gold"
+                });
+                selection_circle.exit().remove();
+
+                selection_text.enter().append("text").attr({
+                    x: 5,
+                    y: function(d, i) {
+                        return 25 + i * 35;
+                    },
+                    fill: "black"
+                }).text(function(d) {
+                    return d;
+                });
+                selection_text.exit().remove();
+
+
+            };
+
+
+            function render() {
+
+                //需要動畫的設定
+                d3.select("#animation").selectAll("circle")
+                    .on("click", function(d) {
+                        var circlex = +d3.select(this).attr("cx");
+                        if (circlex === 100) {
+                            d3.select(this).transition().ease(d).attr({
+                                cx: 300
+                            });
+
+                        } else {
+                            d3.select(this).transition().ease(d).attr({
+                                cx: 100
+                            });
+
+                        }
+                    });
+
+
+            };
+            bind(easeArr);
+            render();
+
+        };
+
+    </script>
+
+
+</body>
+
+</html>

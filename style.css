@@ -1,0 +1,42 @@
+.xxAxis path,
+.xxAxis line {
+    stroke: black;
+    fill: none;
+    shape-rendering: auto;
+}
+
+.xxAxis text {
+    fill: blue;
+    font-size: 12px;
+}
+
+.yyAxis path,
+.yyAxis line {
+    stroke: black;
+    fill: none;
+    shape-rendering: auto;
+}
+
+.yyAxis text {
+    fill: blue;
+    font-size: 12px;
+}
+
+#tooltip {
+    position: absolute;
+    background: #fff;
+    width: 150px;
+    height: auto;
+    padding: 0px 10px;
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+#tooltip.hidden {
+    display: none;
+}
+
+.button{
+    position:static;
+    display:inline-block;
+}
